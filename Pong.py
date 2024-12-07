@@ -1,58 +1,80 @@
 import sys
 import pygame
-import random
 import math
 from pygame.locals import *
+import secrets
+
 
 def start():
-    angle = random.randrange(0, 360)
-    return math.radians(angle)
+    angle = secrets.SystemRandom().randrange(0, 360)
+    dir = math.radians(angle)
+    return dir
+
 
 def left_score():
     global left_points, ballx, bally, ballMoving
     left_points += 1
-    ballx = width // 2
-    bally = height // 2
+    ballx = 758
+    bally = 388
     ballMoving = False
+
 
 def right_score():
     global right_points, ballx, bally, ballMoving
     right_points += 1
-    ballx = width // 2
-    bally = height // 2
+    ballx = 758
+    bally = 388
     ballMoving = False
 
-def ball_collision(direction):
-    return direction + math.pi
 
-def ball_movement(direction):
+def ball_collision(direction):
+    direction += math.radians(90)
+    return direction
+
+
+def ball_movement(direction, collision):
     global ballx, bally
-    if bally >= height - ballsize or bally <= 0:
+    if collision or bally >= height-ballsize or bally <= 0:
         direction = ball_collision(direction)
-    elif ballx >= width - ballsize:
+        ballx = ballx + (5 * math.sin(direction))
+        bally = bally - (5 * math.cos(direction))
+    elif ballx >= width-ballsize:
         left_score()
     elif ballx <= 0:
         right_score()
-
-    ballx += 5 * math.sin(direction)
-    bally -= 5 * math.cos(direction)
+    else:
+        ballx = ballx + (5 * math.sin(direction))
+        bally = bally - (5 * math.cos(direction))
     return direction
+
 
 def left_move_up():
     global lefty
-    lefty = max(0, lefty - 5)
+    if lefty <= 0:
+        return
+    lefty -= 5
+
 
 def left_move_down():
     global lefty
-    lefty = min(height - paddle_height, lefty + 5)
+    if lefty >= 740:
+        return
+    lefty += 5
+
 
 def right_move_up():
     global righty
-    righty = max(0, righty - 5)
+    if righty <= 0:
+        return
+    righty -= 5
+
 
 def right_move_down():
     global righty
-    righty = min(height - paddle_height, righty + 5)
+    if righty >= 740:
+        return
+    righty += 5
+
 
 pygame.init()
 height = 795
@@ -71,11 +93,11 @@ paddle_height = 55
 paddle_width = 41
 ballsize = 19
 leftx = 140
-lefty = height // 2 - paddle_height // 2
-rightx = width - 140 - paddle_width
-righty = height // 2 - paddle_height // 2
-ballx = width // 2
-bally = height // 2
+lefty = 370
+rightx = 1354
+righty = 370
+ballx = 758
+bally = 388
 
 left_points = 0
 right_points = 0
@@ -85,13 +107,12 @@ leftMovingDown = False
 rightMovingUp = False
 rightMovingDown = False
 ballMoving = False
-direction = 0
 
 while True:
     screen.fill((0, 0, 0))
     for event in pygame.event.get():
         if event.type == QUIT:
-            print(f'Left: {left_points}, Right: {right_points}')
+            print('Left: {}, Right: {}'.format(left_points, right_points))
             pygame.quit()
             sys.exit()
         elif event.type == KEYUP:
@@ -116,9 +137,8 @@ while True:
                 if not ballMoving:
                     ballMoving = True
                     direction = start()
-
     if ballMoving:
-        direction = ball_movement(direction)
+        direction = ball_movement(direction, 0)
     if leftMovingUp:
         left_move_up()
     elif leftMovingDown:
@@ -127,11 +147,9 @@ while True:
         right_move_up()
     elif rightMovingDown:
         right_move_down()
-
-    if (leftx < ballx <= leftx + paddle_width and lefty < bally <= lefty + paddle_height) or \
-       (rightx < ballx <= rightx + paddle_width and righty < bally <= righty + paddle_height):
-        direction = ball_collision(direction)
-
+    if leftx < ballx <= leftx+paddle_width and lefty < bally <= lefty+paddle_height or \
+            rightx < ballx <= rightx+paddle_width and righty < bally <= righty+paddle_height:
+        direction = ball_movement(direction, 1)
     screen.blit(ball, (ballx, bally))
     screen.blit(leftpaddle, (leftx, lefty))
     screen.blit(rightpaddle, (rightx, righty))
