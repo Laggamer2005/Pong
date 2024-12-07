@@ -1,4 +1,5 @@
 import sys
+import os
 import pygame.freetype
 import pygame
 import random
@@ -7,7 +8,6 @@ import ctypes
 import math
 import time
 from pygame.locals import *
-
 
 def left_score():
     global left_points, ballMoving, ball_speed, dirchoice, scored, leftMoving, volley
@@ -393,9 +393,9 @@ def line_animation(block):
     elif introMovingUp and block.y <= -80:
         block.y = height + 120
 
-
 pygame.init()
-ctypes.windll.user32.SetProcessDPIAware()
+if os.name == 'nt':
+    ctypes.windll.user32.SetProcessDPIAware()
 height = 960
 width = 1280
 screen = pygame.display.set_mode((width, height))
@@ -460,24 +460,23 @@ for i in range(14):
     blocks.clear()
 
 make_score()
-dirchoice = random.choice([0, 1])
-if dirchoice == 0:
-    leftMoving = True
-else:
-    leftMoving = False
+dirchoice = random.choice([0,_1])
+leftMoving = (dirchoice == 0)
 
 pygame.mouse.set_cursor((8, 8), (0, 0), (0, 0, 0, 0, 0, 0, 0, 0), (0, 0, 0, 0, 0, 0, 0, 0))
-pygame.mouse.set_pos([0, 0])
+pygame.mouse.set_pos([0,_0])
 scoreTime = time.time()
 lastTime = time.time()
+
 while True:
     dt = time.time() - lastTime
     dt *= FPS
     lastTime = time.time()
+
     if not gameStarted:
         if not chosen:
-            FPS = random.choice([60, 90, 120, 150])
-            yspeed = random.choice([1, 2, 5, 10])
+            FPS = random.choice([60,_90,_120,_150])
+            yspeed = random.choice([1,_2,_5,_10])
             chosen = True
         else:
             intro(yspeed)
@@ -487,6 +486,7 @@ while True:
             color(right_paddle)
             pygame.draw.rect(screen, (255, 255, 255), ball)
             color(ball)
+
         for event in pygame.event.get():
             if event.type == KEYUP:
                 if event.key == K_SPACE:
@@ -494,36 +494,34 @@ while True:
                     make_score()
                     scoreTime = time.time()
                 elif event.key == K_LSHIFT:
-                    if controls == 'Mouse':
-                        controls = 'Key'
-                    else:
-                        controls = 'Mouse'
+                    controls = 'Key' if controls == 'Mouse' else 'Mouse'
                 elif event.key == K_ESCAPE:
                     pygame.quit()
                     sys.exit()
             elif event.type == QUIT:
                 pygame.quit()
                 sys.exit()
+
     elif gameStarted:
         chosen = False
         FPS = 60
         screen.fill((0, 0, 0))
+
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
-            elif event.type == KEYUP and event.key == K_LSHIFT:
-                if controls == 'Mouse':
-                    controls = 'Key'
-                else:
-                    controls = 'Mouse'
-            elif event.type == KEYUP and event.key == K_SPACE:
-                new_game(1)
-                scoreTime = time.time()
-                make_score()
-            elif event.type == KEYUP and event.key == K_ESCAPE:
-                pygame.quit()
-                sys.exit()
+            elif event.type == KEYUP:
+                if event.key == K_LSHIFT:
+                    controls = 'Key' if controls == 'Mouse' else 'Mouse'
+                elif event.key == K_SPACE:
+                    new_game(1)
+                    scoreTime = time.time()
+                    make_score()
+                elif event.key == K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()
+
             if controls == 'Mouse':
                 if event.type == MOUSEMOTION:
                     position = pygame.mouse.get_pos()
@@ -551,30 +549,25 @@ while True:
                         rightMovingUp = True
                     elif event.key == K_DOWN:
                         rightMovingDown = True
+
         if not ballMoving and ballTimer >= 2:
             ballMoving = True
             ball.x = ballx
             ball.y = random.randint(66, height-84)
             if dirchoice == 0:
-                quadrant = random.choice([2, 3])
-                if quadrant == 2:
-                    direction = random.randint(125, 180)
-                else:
-                    direction = random.randint(186, 225)
+                quadrant = random.choice([2,_3])
+                direction = random.randint(125, 180) if quadrant == 2 else random.randint(186, 225)
             else:
-                quadrant = random.choice([1, 4])
-                if quadrant == 1:
-                    direction = random.randint(0, 45)
-                else:
-                    direction = random.randint(315, 354)
-            vx = ball_speed
-            if dirchoice == 0:
-                vx *= -1
+                quadrant = random.choice([1,_4])
+                direction = random.randint(0, 45) if quadrant == 1 else random.randint(315, 354)
+            vx = ball_speed * (-1 if dirchoice == 0 else 1)
             vy = math.tan(math.radians(direction)) * vx
             spawn_sound.play()
             ballTimer = 0
+
         if ballMoving:
             ball = ball_movement(ball)
+
         if controls == 'Key':
             if leftMovingUp and not leftMovingDown:
                 left_paddle = move_up(left_paddle)
@@ -584,19 +577,23 @@ while True:
                 right_paddle = move_up(right_paddle)
             elif rightMovingDown and not rightMovingUp:
                 right_paddle = move_down(right_paddle)
+
         if ball.colliderect(left_paddle):
             ball = paddle_collision(ball, left_paddle)
         elif ball.colliderect(right_paddle):
             ball = paddle_collision(ball, right_paddle)
+
         if scored:
             scored = False
             make_score()
             scoreTime = time.time()
             if left_points == 15 or right_points == 15:
                 new_game(0)
+
         if gameStarted and not ballMoving:
             write_score()
             ballTimer = time.time() - scoreTime
+
         background()
         pygame.draw.rect(screen, (255, 255, 255), left_paddle)
         color(left_paddle)
@@ -604,5 +601,6 @@ while True:
         color(right_paddle)
         pygame.draw.rect(screen, (255, 255, 255), ball)
         color(ball)
+
     pygame.display.update()
     fpsClock.tick(FPS)
